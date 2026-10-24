@@ -258,7 +258,7 @@ object DocEngine {
         b.recycle()
     }
 
-    // ---------- NEXA (Claude) edits ----------
+    // ---------- NEXA (AI) edits ----------
     fun fieldsJson(t: Tpl): String {
         val a = JSONArray()
         t.fields.take(300).forEach { a.put(JSONObject().put("id", it.id).put("text", it.text)) }
@@ -266,22 +266,11 @@ object DocEngine {
     }
 
     suspend fun claudeJson(system: String, user: String): String {
-        val key = Store.get("claudeKey")
-        if (key.isBlank()) return ""
-        val body = JSONObject()
-            .put("model", Store.get("claudeModel").ifBlank { "claude-sonnet-5-5" })
-            .put("max_tokens", 4000)
-            .put("system", system)
-            .put("messages", JSONArray().put(JSONObject().put("role", "user").put("content", user)))
-        val (c, b) = Net.call(
-            "https://api.anthropic.com/v1/messages", "POST", body.toString(),
-            mapOf("x-api-key" to key, "anthropic-version" to "2023-06-01")
-        )
-        if (c != 200) return ""
-        return try { JSONObject(b).getJSONArray("content").getJSONObject(0).getString("text") } catch (e: Exception) { "" }
+        val (c, t) = Ai.chat(system, listOf("user" to user), 4000)
+        return if (c == 200) t else ""
     }
 
-    /** Applies the JSON ops returned by Claude. Returns how many fields changed. */
+    /** Applies the JSON ops returned by the AI. Returns how many fields changed. */
     fun applyOps(t: Tpl, json: String): Int {
         val a = try {
             JSONArray(json.substring(json.indexOf('['), json.lastIndexOf(']') + 1))
