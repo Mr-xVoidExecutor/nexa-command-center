@@ -151,7 +151,9 @@ object Api {
     suspend fun checkAll(): String {
         val sites = Store.list("sites").map { it.split("\t", limit = 2) }.filter { it.size > 1 }
         if (sites.isEmpty()) return "No sites added yet."
-        return sites.joinToString("\n") { "${it[0]}: ${ping(it[1])}" }
+        val lines = mutableListOf<String>()
+        for (site in sites) lines.add("${site[0]}: ${ping(site[1])}")
+        return lines.joinToString("\n")
     }
 
     // ---------- Network ----------
