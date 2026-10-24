@@ -342,22 +342,40 @@ fun NetScreen(back: () -> Unit) {
 
 @Composable
 fun SettingsScreen(back: () -> Unit, lock: () -> Unit) {
-    val defs = listOf(
-        "ghToken" to "GitHub token (PAT)",
-        "claudeKey" to "Claude API key",
-        "claudeModel" to "Claude model (blank = claude-sonnet-5-5)",
-        "fbToken" to "Meta access token"
-    )
-    val vals = remember { defs.map { mutableStateOf(Store.get(it.first)) } }
+    var sel by remember { mutableStateOf(Store.get("aiPreset").ifBlank { "claude" }) }
+    var url by remember { mutableStateOf(Store.get("aiUrl").ifBlank { Ai.preset(sel).url }) }
+    var model by remember {
+        mutableStateOf(Store.get("aiModel").ifBlank { Store.get("claudeModel").ifBlank { Ai.preset(sel).model } })
+    }
+    var aiKey by remember { mutableStateOf(Ai.key()) }
+    var gh by remember { mutableStateOf(Store.get("ghToken")) }
+    var fb by remember { mutableStateOf(Store.get("fbToken")) }
     var newPin by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf("") }
     var sure by remember { mutableStateOf(false) }
     Screen("Settings", back) {
-        defs.forEachIndexed { i, d ->
-            Field(vals[i].value, { vals[i].value = it }, d.second, secret = d.first != "claudeModel")
+        Mono("AI PROVIDER (voice brain + Doc Studio)", Cyan, 13, true)
+        Mono("Pick any provider and paste its API key.", Dim, 11)
+        Ai.presets.forEach { p ->
+            Link((if (sel == p.id) "◉ " else "○ ") + p.label, if (sel == p.id) Cyan else Dim) {
+                sel = p.id; url = p.url; model = p.model
+            }
         }
-        NeonButton("SAVE KEYS", Modifier.fillMaxWidth()) {
-            defs.forEachIndexed { i, d -> Store.put(d.first, vals[i].value.trim()) }
+        Field(aiKey, { aiKey = it }, "AI API key", secret = true)
+        Field(model, { model = it }, "Model name")
+        Field(url, { url = it }, "API URL")
+        Spacer(Modifier.height(6.dp))
+        Mono("OTHER KEYS", Cyan, 13, true)
+        Field(gh, { gh = it }, "GitHub token (PAT)", secret = true)
+        Field(fb, { fb = it }, "Meta access token", secret = true)
+        NeonButton("SAVE", Modifier.fillMaxWidth()) {
+            Store.put("aiPreset", sel)
+            Store.put("aiType", Ai.preset(sel).type)
+            Store.put("aiUrl", url.trim())
+            Store.put("aiModel", model.trim())
+            Store.put("aiKey", aiKey.trim())
+            Store.put("ghToken", gh.trim())
+            Store.put("fbToken", fb.trim())
             msg = "Saved securely."
         }
         Spacer(Modifier.height(10.dp))
