@@ -7,7 +7,7 @@ import java.util.Date
 import java.util.Locale
 
 object Api {
-    // ---------- Claude (voice brain) ----------
+    // ---------- AI (voice brain) ----------
     private val hist = mutableListOf<Pair<String, String>>()
 
     private const val SYSTEM =
@@ -27,27 +27,14 @@ object Api {
         "Only use a command when he clearly asks for that action."
 
     suspend fun ask(user: String): String {
-        val key = Store.get("claudeKey")
-        if (key.isBlank()) return "Please add your Claude API key in Settings, Captain."
+        if (Ai.key().isBlank()) return "Please add your AI API key in Settings, Captain."
         hist.add("user" to user)
-        val msgs = JSONArray()
-        hist.takeLast(12).forEach { msgs.put(JSONObject().put("role", it.first).put("content", it.second)) }
-        val body = JSONObject()
-            .put("model", Store.get("claudeModel").ifBlank { "claude-sonnet-5-5" })
-            .put("max_tokens", 500)
-            .put("system", SYSTEM)
-            .put("messages", msgs)
-        val (c, b) = Net.call(
-            "https://api.anthropic.com/v1/messages", "POST", body.toString(),
-            mapOf("x-api-key" to key, "anthropic-version" to "2023-06-01")
-        )
+        // keep an odd number of items so the list always starts with a user message
+        val (c, t) = Ai.chat(SYSTEM, hist.takeLast(11), 500)
         if (c != 200) {
             hist.removeAt(hist.size - 1)
             return "I could not reach my brain, Captain. Error $c."
         }
-        val t = try {
-            JSONObject(b).getJSONArray("content").getJSONObject(0).getString("text")
-        } catch (e: Exception) { "I got an unreadable answer, Captain." }
         hist.add("assistant" to t)
         return t
     }
