@@ -9,7 +9,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,23 +30,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -55,26 +48,27 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val Cyan = Color(0xFF00F0FF)
-val Purple = Color(0xFF9D4DFF)
-val Pink = Color(0xFFFF2BD6)
-val Bg = Color(0xFF05060F)
-val PanelBg = Color(0xFF0C1124)
-val Dim = Color(0xFF8FA3C7)
+val Cyan = Color(0xFF0078A8)
+val Purple = Color(0xFF6554C0)
+val Pink = Color(0xFFC2185B)
+val Bg = Color(0xFFF4F7FA)
+val PanelBg = Color(0xFFFFFFFF)
+val Dim = Color(0xFF586575)
+val Ink = Color(0xFF1C2733)
 
 @Composable
 fun NexaTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = darkColorScheme(
+        colorScheme = lightColorScheme(
             primary = Cyan, secondary = Purple, background = Bg, surface = PanelBg,
-            onPrimary = Color.Black, onBackground = Color.White, onSurface = Color.White
+            onPrimary = Color.White, onBackground = Ink, onSurface = Ink
         ),
         content = content
     )
 }
 
 @Composable
-fun Mono(t: String, color: Color = Color.White, size: Int = 13, bold: Boolean = false, modifier: Modifier = Modifier) {
+fun Mono(t: String, color: Color = Ink, size: Int = 13, bold: Boolean = false, modifier: Modifier = Modifier) {
     Text(
         t, modifier = modifier, color = color, fontSize = size.sp, fontFamily = FontFamily.Monospace,
         fontWeight = if (bold) FontWeight.Bold else FontWeight.Normal
@@ -94,8 +88,8 @@ fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> 
     val shape = RoundedCornerShape(14.dp)
     Column(
         modifier.fillMaxWidth().padding(vertical = 5.dp).clip(shape)
-            .background(PanelBg.copy(alpha = 0.85f))
-            .border(1.dp, Brush.horizontalGradient(listOf(Cyan.copy(alpha = 0.7f), Purple.copy(alpha = 0.7f))), shape)
+            .background(PanelBg)
+            .border(1.dp, Brush.horizontalGradient(listOf(Cyan.copy(alpha = 0.35f), Purple.copy(alpha = 0.35f))), shape)
             .padding(12.dp),
         content = content
     )
@@ -106,7 +100,7 @@ fun NeonButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit)
     Button(
         onClick = onClick,
         modifier = modifier.padding(vertical = 3.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Cyan.copy(alpha = 0.15f), contentColor = Cyan),
+        colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color.White),
         border = BorderStroke(1.dp, Cyan),
         shape = RoundedCornerShape(10.dp)
     ) { Text(text, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
@@ -126,8 +120,10 @@ fun Field(
         maxLines = if (lines == 1) 1 else 8,
         visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Cyan, unfocusedBorderColor = Purple.copy(alpha = 0.6f),
-            focusedLabelColor = Cyan, cursorColor = Cyan
+            focusedTextColor = Ink, unfocusedTextColor = Ink,
+            focusedContainerColor = PanelBg, unfocusedContainerColor = PanelBg,
+            focusedBorderColor = Cyan, unfocusedBorderColor = Purple.copy(alpha = 0.55f),
+            focusedLabelColor = Cyan, unfocusedLabelColor = Dim, cursorColor = Cyan
         )
     )
 }
@@ -137,8 +133,9 @@ fun Field(
 fun Screen(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxSize().padding(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            DrawerToggle()
             Text("‹", color = Cyan, fontSize = 34.sp, modifier = Modifier.clickable { onBack() }.padding(end = 14.dp))
-            Mono(title.uppercase(), Cyan, 20, true)
+            Mono(title.uppercase(), Cyan, 20, true, Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), content = content)
@@ -173,66 +170,6 @@ fun MatrixRain(modifier: Modifier = Modifier) {
                     }
                 }
             }
-        }
-    }
-}
-
-/**
- * NEXA's living body: the character image breathes, floats, sways and drifts around,
- * pulses harder while she is speaking, and a holographic scan-line sweeps over her.
- */
-@Composable
-fun Avatar(speaking: Boolean, modifier: Modifier = Modifier) {
-    val inf = rememberInfiniteTransition(label = "avatar")
-    val bob by inf.animateFloat(-18f, 18f, infiniteRepeatable(tween(3200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "bob")
-    val drift by inf.animateFloat(-34f, 34f, infiniteRepeatable(tween(7000, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "drift")
-    val breathe by inf.animateFloat(1f, 1.025f, infiniteRepeatable(tween(2600), RepeatMode.Reverse), label = "breathe")
-    val sway by inf.animateFloat(-1.4f, 1.4f, infiniteRepeatable(tween(5200, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "sway")
-    val talk by inf.animateFloat(1f, 1.05f, infiniteRepeatable(tween(260), RepeatMode.Reverse), label = "talk")
-    val glow by inf.animateFloat(0.25f, 0.9f, infiniteRepeatable(tween(1800), RepeatMode.Reverse), label = "glow")
-    val scan by inf.animateFloat(0f, 1f, infiniteRepeatable(tween(3500, easing = LinearEasing)), label = "scan")
-    val s = breathe * (if (speaking) talk else 1f)
-    val shape = RoundedCornerShape(24.dp)
-    val mood = Mood.now.value
-    val mc = when (mood) {
-        "angry" -> Color(0xFFFF3B3B)
-        "sad" -> Color(0xFF4D7CFF)
-        "happy" -> Color(0xFF00FFA3)
-        "shy", "caring" -> Pink
-        "playful" -> Purple
-        else -> Cyan
-    }
-    val ctx = LocalContext.current
-    // Optional expression images: drop nexa_happy / nexa_angry / nexa_sad / nexa_shy / nexa_playful / nexa_caring into res/drawable-nodpi
-    val resId = remember(mood) {
-        val id = ctx.resources.getIdentifier("nexa_$mood", "drawable", ctx.packageName)
-        if (id != 0) id else R.drawable.nexa_avatar
-    }
-    Box(
-        modifier.clip(shape).border(
-            2.dp,
-            Brush.verticalGradient(listOf(mc.copy(alpha = if (speaking) 1f else glow), Pink.copy(alpha = glow))),
-            shape
-        )
-    ) {
-        Image(
-            painterResource(resId), "NEXA",
-            Modifier.fillMaxSize().graphicsLayer {
-                translationY = bob; translationX = drift; rotationZ = sway
-                scaleX = 1.12f * s; scaleY = 1.12f * s
-            },
-            alignment = Alignment.TopCenter, contentScale = ContentScale.Crop
-        )
-        Box(Modifier.fillMaxSize().background(mc.copy(alpha = 0.12f)))
-        Canvas(Modifier.fillMaxSize()) {
-            val y = size.height * scan
-            drawRect(
-                Brush.verticalGradient(
-                    listOf(Color.Transparent, Cyan.copy(alpha = 0.35f), Color.Transparent),
-                    startY = y - 60f, endY = y + 60f
-                ),
-                topLeft = Offset(0f, y - 60f), size = Size(size.width, 120f)
-            )
         }
     }
 }

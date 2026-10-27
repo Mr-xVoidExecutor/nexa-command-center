@@ -12,17 +12,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -32,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -111,7 +107,7 @@ fun LoginScreen(act: FragmentActivity, onOk: () -> Unit) {
             if (!booted) {
                 lines.forEach { Mono(it, Cyan) }
             } else {
-                Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(250.dp))
+                Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(370.dp))
                 Spacer(Modifier.height(10.dp))
                 Mono("N E X A", Cyan, 28, true)
                 Mono(if (hasPin) "ENTER ACCESS CODE" else "CREATE ACCESS CODE (4-8 digits)", Dim)
@@ -123,7 +119,10 @@ fun LoginScreen(act: FragmentActivity, onOk: () -> Unit) {
                     visualTransformation = PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Cyan, unfocusedBorderColor = Purple, cursorColor = Cyan
+                        focusedTextColor = Ink, unfocusedTextColor = Ink,
+                        focusedContainerColor = PanelBg, unfocusedContainerColor = PanelBg,
+                        focusedBorderColor = Cyan, unfocusedBorderColor = Purple,
+                        focusedLabelColor = Cyan, unfocusedLabelColor = Dim, cursorColor = Cyan
                     )
                 )
                 if (msg.isNotEmpty()) Mono(msg, Pink)
@@ -138,37 +137,29 @@ fun LoginScreen(act: FragmentActivity, onOk: () -> Unit) {
 
 @Composable
 fun HomeScreen(go: (String) -> Unit, lock: () -> Unit) {
-    val tiles = listOf(
-        "ai" to "🎙 AI VOICE", "docs" to "📄 DOC STUDIO", "github" to "🐙 GITHUB", "deploy" to "🚀 DEPLOY", "db" to "🗄 DATABASE",
-        "ads" to "📣 META ADS", "tasks" to "✅ TASKS", "notes" to "📝 NOTES", "vault" to "🔐 VAULT",
-        "uptime" to "📡 UPTIME", "console" to "💻 CONSOLE", "tools" to "🧰 TOOLS", "hud" to "📊 SYSTEM HUD",
-        "focus" to "⏱ FOCUS", "net" to "🌐 NETWORK", "settings" to "⚙ SETTINGS"
-    )
-    val shape = RoundedCornerShape(14.dp)
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Column {
-                Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(250.dp))
-                Spacer(Modifier.height(6.dp))
-                Mono("NEXA ONLINE • tap AI VOICE to talk", Cyan)
+    Column(Modifier.fillMaxSize().padding(14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            DrawerToggle()
+            Column(Modifier.weight(1f)) {
+                Mono("NEXA COMMAND CENTER", Cyan, 17, true)
+                Mono("PERSONAL SYSTEMS • ONLINE", Dim, 10, true)
             }
+            Link("LOCK", Pink) { lock() }
         }
-        items(tiles) { (key, title) ->
-            Box(
-                Modifier.fillMaxWidth().height(64.dp).clip(shape).background(PanelBg)
-                    .border(1.dp, Brush.horizontalGradient(listOf(Cyan.copy(alpha = 0.7f), Purple.copy(alpha = 0.7f))), shape)
-                    .clickable { go(key) },
-                contentAlignment = Alignment.Center
-            ) { Mono(title, Color.White, 13, true) }
-        }
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            NeonButton("🔒 LOCK NOW", Modifier.fillMaxWidth()) { lock() }
+        Column(
+            Modifier.weight(1f).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(440.dp))
+            Spacer(Modifier.height(14.dp))
+            Panel {
+                Mono("SYSTEMS NOMINAL", Cyan, 15, true)
+                Spacer(Modifier.height(4.dp))
+                Mono("Your command center is ready, Captain.", Ink, 13)
+            }
+            Spacer(Modifier.height(8.dp))
+            NeonButton("START A CONVERSATION", Modifier.fillMaxWidth()) { go("ai") }
         }
     }
 }
@@ -182,11 +173,43 @@ fun AiScreen(back: () -> Unit, lock: () -> Unit) {
     var listening by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var typed by remember { mutableStateOf("") }
+    var memoryDraft by remember { mutableStateOf("") }
+    val memories = remember { mutableStateListOf<String>().apply { addAll(Store.list("aiMemories")) } }
 
     fun handle(text: String) {
         heard = text
+        val lower = text.lowercase()
+        val motion = when {
+            "dance" in lower -> "dance"
+            "run" in lower -> "run"
+            "walk" in lower -> "walk"
+            "sit" in lower -> "sit"
+            "wave" in lower -> "wave"
+            else -> null
+        }
+        val shortDirectMotion = motion != null && lower.split(Regex("\\s+")).size <= 3 &&
+            (lower.startsWith(motion) || lower.startsWith("please $motion"))
+        if (motion != null && ("nexa" in lower || "avatar" in lower || "you " in lower || shortDirectMotion)) {
+            AvatarMotion.pose.value = motion
+            Mood.now.value = if (motion == "dance" || motion == "wave") "playful" else "happy"
+            reply = when (motion) {
+                "dance" -> "All right, Captain. One tiny victory dance."
+                "run" -> "Running a quick lap, Captain."
+                "walk" -> "Taking a little walk, Captain."
+                "sit" -> "Taking a seat. What is next?"
+                else -> "Hi, Captain!"
+            }
+            Voice.say(reply, Mood.now.value)
+            return
+        }
         scope.launch {
             busy = true
+            when {
+                listOf("sad", "upset", "anxious", "worried", "lonely", "stress").any { it in lower } ->
+                    Mood.now.value = "caring"
+                listOf("happy", "great", "excited", "awesome", "love this").any { it in lower } ->
+                    Mood.now.value = "happy"
+            }
             val r = Api.ask(text)
             val re = Regex("\\[\\[CMD:(.*?)]]")
             val emoRe = Regex("\\[\\[EMO:(\\w+)]]")
@@ -205,7 +228,7 @@ fun AiScreen(back: () -> Unit, lock: () -> Unit) {
         }
     }
 
-    val listener = remember { Listener(ctx, { handle(it) }, { listening = it }) }
+    val listener = remember { Listener(ctx, { handle(it) }, { listening = it }, { heard = it }) }
     DisposableEffect(Unit) { onDispose { listener.destroy() } }
     val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) listener.start()
@@ -219,18 +242,43 @@ fun AiScreen(back: () -> Unit, lock: () -> Unit) {
     }
 
     Screen("AI Voice", back) {
-        Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(300.dp))
+        Avatar(Voice.speaking.value, Modifier.fillMaxWidth().height(430.dp))
+        AvatarMotionControls(Modifier.height(36.dp))
         Spacer(Modifier.height(8.dp))
         Panel {
             Mono("YOU: $heard", Dim)
             Spacer(Modifier.height(6.dp))
             Mono(if (busy) "thinking…" else reply, Cyan, 14)
         }
+        if (memories.isNotEmpty()) {
+            Panel {
+                Mono("NEXA REMEMBERS", Cyan, 12, true)
+                memories.forEachIndexed { index, memory ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Mono(memory, Ink, 12, modifier = Modifier.weight(1f))
+                        Link("REMOVE", Pink) {
+                            memories.removeAt(index)
+                            Store.saveList("aiMemories", memories.toList())
+                        }
+                    }
+                }
+            }
+        }
+        Field(memoryDraft, { memoryDraft = it }, "A preference for NEXA to remember")
+        NeonButton("SAVE PRIVATE MEMORY", Modifier.fillMaxWidth()) {
+            val memory = memoryDraft.trim()
+            if (memory.isNotEmpty() && memory !in memories) {
+                memories.add(memory)
+                Store.saveList("aiMemories", memories.toList())
+                memoryDraft = ""
+            }
+        }
+        Mono("Stored encrypted on this device; shared with your selected AI provider when chatting.", Dim, 10)
         NeonButton(if (listening) "● LISTENING…" else "🎙 TALK TO NEXA", Modifier.fillMaxWidth()) { mic() }
         Field(typed, { typed = it }, "Or type a message")
         NeonButton("SEND", Modifier.fillMaxWidth()) {
             if (typed.isNotBlank()) { val t = typed; typed = ""; handle(t) }
         }
-        Mono("Try: “check my sites”, “add task buy domain”, “deploy my-site”, “what's my battery”, “lock”", Dim, 11)
+        Mono("Try: “check my sites”, “add task buy domain”, “NEXA, dance”, “sit”, “what's my battery”, “lock”", Dim, 11)
     }
 }

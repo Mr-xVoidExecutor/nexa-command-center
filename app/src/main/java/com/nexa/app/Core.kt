@@ -42,8 +42,12 @@ object Store {
     fun get(k: String, d: String = ""): String = sp.getString(k, d) ?: d
     fun put(k: String, v: String) { sp.edit().putString(k, v).apply() }
     fun list(k: String): List<String> {
-        val a = JSONArray(get(k, "[]"))
-        return List(a.length()) { a.getString(it) }
+        return try {
+            val a = JSONArray(get(k, "[]"))
+            List(a.length()) { a.getString(it) }
+        } catch (_: Exception) {
+            emptyList()
+        }
     }
     fun saveList(k: String, l: List<String>) = put(k, JSONArray(l).toString())
     fun wipe() { sp.edit().clear().apply() }
@@ -53,6 +57,7 @@ object Net {
     private val http = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
+        .callTimeout(60, TimeUnit.SECONDS)
         .build()
 
     /** Returns (httpCode, body). Code -1 means network failure. */

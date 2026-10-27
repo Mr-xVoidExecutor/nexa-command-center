@@ -1,6 +1,6 @@
 # NEXA – Personal Command Center (Android)
 
-Cyberpunk command center with a voice-talking AI avatar.
+Personal cyberpunk command center with a voice-reactive, illustrated full-body AI avatar.
 
 **Build:** push this folder to a GitHub repo (branch `main`). The workflow in `.github/workflows/android_build.yml`
 builds the APK — download it from the Actions run under *Artifacts → NEXA-debug-apk*.
@@ -10,5 +10,6 @@ builds the APK — download it from the Actions run under *Artifacts → NEXA-de
 
 Modules: AI Voice, Doc Studio, GitHub, Deploy, Database, Meta Ads, Tasks, Notes, Vault, Uptime, Console, Tools, System HUD, Focus, Network, Settings.
 
-**Mood images:** `res/drawable-nodpi/nexa_<mood>.jpg` (happy, angry, sad, shy, playful, caring) are colour-graded variants of the base image.
-Replace any of them with real expression artwork of the same character (same file name) and the app will use it automatically.
+**Avatar:** The full-body character is drawn locally in `Avatar.kt`; no avatar service, API key, or network connection is needed. It has idle breathing/blinking, mood colours and expressions, speech-reactive mouth movement, touch-to-wave, drag-to-walk, and IDLE/WALK/RUN/SIT/DANCE/WAVE controls. Avatar movement commands also work from the AI conversation. This is a stylized 2D illustration, not a photorealistic talking-head model or AR character.
+
+**AI memory:** Preferences saved from AI Voice are encrypted on-device. Saved preferences and recent conversation turns are included as context when chatting with the configured AI provider.

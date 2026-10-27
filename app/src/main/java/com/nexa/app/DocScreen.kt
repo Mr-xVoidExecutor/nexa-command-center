@@ -232,7 +232,7 @@ fun EditorScreen(t: Tpl, close: () -> Unit) {
         // page switcher + preview
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Link("◀") { if (pi > 0) pi-- }
-            Mono("Page ${pi + 1} / ${t.pages.size}", Color.White, 13, true)
+            Mono("Page ${pi + 1} / ${t.pages.size}", Ink, 13, true)
             Link("▶") { if (pi < t.pages.size - 1) pi++ }
         }
         val bmp = preview
@@ -269,7 +269,7 @@ fun EditorScreen(t: Tpl, close: () -> Unit) {
             if (mode.isNotEmpty()) Link("CANCEL", Pink) { mode = "" }
             t.slots.filter { it.page == pi }.forEach { s ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Mono(if (s.watermark) "💧 Watermark" else if (s.bmp == null) "🧽 Erased area" else "🖼 Image slot", Color.White, 12, modifier = Modifier.weight(1f))
+                    Mono(if (s.watermark) "💧 Watermark" else if (s.bmp == null) "🧽 Erased area" else "🖼 Image slot", Ink, 12, modifier = Modifier.weight(1f))
                     Link("✕", Pink) { t.slots.remove(s); ver++ }
                 }
             }

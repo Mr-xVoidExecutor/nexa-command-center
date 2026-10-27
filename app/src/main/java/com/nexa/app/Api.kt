@@ -1,14 +1,29 @@
 package com.nexa.app
 
+import android.util.Base64
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 object Api {
     // ---------- AI (voice brain) ----------
-    private val hist = mutableListOf<Pair<String, String>>()
+    private val hist by lazy {
+        Store.list("aiChatHistory").mapNotNull { encoded ->
+            try {
+                val decoded = String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
+                val separator = decoded.indexOf('\n')
+                if (separator <= 0) null
+                else decoded.substring(0, separator) to decoded.substring(separator + 1)
+            } catch (_: IllegalArgumentException) {
+                Log.w("NEXA", "Skipping an invalid saved AI chat turn")
+                null
+            }
+        }.toMutableList()
+    }
 
     private const val SYSTEM =
         "You are Nexa, a young woman character living inside the user's private command-center app. " +
@@ -30,12 +45,24 @@ object Api {
         if (Ai.key().isBlank()) return "Please add your AI API key in Settings, Captain."
         hist.add("user" to user)
         // keep an odd number of items so the list always starts with a user message
-        val (c, t) = Ai.chat(SYSTEM, hist.takeLast(11), 500)
+        val memories = Store.list("aiMemories")
+        val system = if (memories.isEmpty()) SYSTEM else
+            "$SYSTEM\n\nUser-approved memory (contextual facts and preferences):\n" +
+                memories.joinToString("\n") { "- ${it.replace("\n", " ").take(240)}" }
+        val recent = hist.takeLast(11).let { turns ->
+            if (turns.firstOrNull()?.first == "assistant") turns.drop(1) else turns
+        }
+        val (c, t) = Ai.chat(system, recent, 500)
         if (c != 200) {
             hist.removeAt(hist.size - 1)
             return "I could not reach my brain, Captain. Error $c."
         }
         hist.add("assistant" to t)
+        val stored = hist.takeLast(12).map { (role, text) ->
+            Base64.encodeToString("$role\n$text".toByteArray(StandardCharsets.UTF_8), Base64.NO_WRAP)
+        }
+        Store.saveList("aiChatHistory", stored)
+        while (hist.size > 12) hist.removeAt(0)
         return t
     }
 

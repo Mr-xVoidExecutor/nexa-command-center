@@ -124,7 +124,7 @@ fun DbScreen(back: () -> Unit) {
         NeonButton("QUERY (first 20 rows)", Modifier.fillMaxWidth()) {
             scope.launch { out = "Loading…"; out = Api.table(table) }
         }
-        if (out.isNotEmpty()) Panel { Mono(out, Color.White, 11) }
+        if (out.isNotEmpty()) Panel { Mono(out, Ink, 11) }
     }
 }
 
@@ -167,7 +167,7 @@ fun TasksScreen(back: () -> Unit) {
                     })
                     Text(
                         s.substringAfter("\t"),
-                        color = if (done) Dim else Color.White,
+                        color = if (done) Dim else Ink,
                         textDecoration = if (done) TextDecoration.LineThrough else null,
                         modifier = Modifier.weight(1f)
                     )
@@ -226,7 +226,7 @@ fun ConsoleScreen(back: () -> Unit, lock: () -> Unit) {
     val log = remember { mutableStateListOf("NEXA console ready. Type 'help'.") }
     var cmd by remember { mutableStateOf("") }
     Screen("Console", back) {
-        Panel { log.forEach { Mono(it, if (it.startsWith(">")) Cyan else Color.White, 12) } }
+        Panel { log.forEach { Mono(it, if (it.startsWith(">")) Cyan else Ink, 12) } }
         Field(cmd, { cmd = it }, "command")
         NeonButton("RUN", Modifier.fillMaxWidth()) {
             val c = cmd.trim()
@@ -262,7 +262,7 @@ fun ToolsScreen(back: () -> Unit) {
             out = Tools.genPass(input.trim().toIntOrNull() ?: 20)
         }
         if (out.isNotEmpty()) Panel {
-            Mono(out, Color.White, 12)
+            Mono(out, Ink, 12)
             Link("COPY") { clip.setText(AnnotatedString(out)) }
         }
     }
@@ -270,7 +270,7 @@ fun ToolsScreen(back: () -> Unit) {
 
 @Composable
 private fun Bar(label: String, v: Int) {
-    Mono("$label  $v%", Color.White, 13, true)
+    Mono("$label  $v%", Ink, 13, true)
     LinearProgressIndicator(
         progress = { v / 100f },
         modifier = Modifier.fillMaxWidth().height(8.dp),
@@ -336,7 +336,7 @@ fun NetScreen(back: () -> Unit) {
         NeonButton("SCAN IP & LATENCY", Modifier.fillMaxWidth()) {
             scope.launch { out = "Scanning…"; out = Api.netInfo() }
         }
-        if (out.isNotEmpty()) Panel { Mono(out, Color.White, 13) }
+        if (out.isNotEmpty()) Panel { Mono(out, Ink, 13) }
     }
 }
 

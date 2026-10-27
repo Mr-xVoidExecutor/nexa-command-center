@@ -9,6 +9,7 @@ import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import java.util.Locale
 
 /** Current emotional state of NEXA (drives voice tone and avatar look). */
@@ -18,7 +19,9 @@ object Mood { val now = mutableStateOf("calm") }
 object Voice {
     private var tts: TextToSpeech? = null
     private var ready = false
+    private var currentText = ""
     val speaking = mutableStateOf(false)
+    val mouthOpen = mutableFloatStateOf(0f)
 
     fun init(c: Context) {
         if (tts != null) return
@@ -28,9 +31,29 @@ object Voice {
                 tts?.setPitch(0.85f)
                 tts?.setSpeechRate(0.95f)
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                    override fun onStart(utteranceId: String?) { speaking.value = true }
-                    override fun onDone(utteranceId: String?) { speaking.value = false }
-                    override fun onError(utteranceId: String?) { speaking.value = false }
+                    override fun onStart(utteranceId: String?) {
+                        speaking.value = true
+                        mouthOpen.floatValue = 0.28f
+                    }
+                    override fun onDone(utteranceId: String?) {
+                        speaking.value = false
+                        mouthOpen.floatValue = 0f
+                    }
+                    override fun onError(utteranceId: String?) {
+                        speaking.value = false
+                        mouthOpen.floatValue = 0f
+                    }
+                    override fun onRangeStart(utteranceId: String?, start: Int, length: Int, frame: Int) {
+                        val segment = currentText.substring(start.coerceAtMost(currentText.length),
+                            (start + length).coerceAtMost(currentText.length)).lowercase(Locale.US)
+                        val open = when {
+                            segment.startsWith("m") || segment.startsWith("b") || segment.startsWith("p") -> 0.08f
+                            segment.any { it in "ou" } -> 0.82f
+                            segment.any { it in "aei" } -> 0.57f
+                            else -> 0.22f
+                        }
+                        mouthOpen.floatValue = open
+                    }
                 })
                 ready = true
             }
@@ -39,6 +62,7 @@ object Voice {
 
     fun say(t: String, mood: String = "calm") {
         if (!ready || t.isBlank()) return
+        currentText = t
         val (pitch, rate) = when (mood) {
             "happy" -> 0.98f to 1.05f
             "playful" -> 0.98f to 1.08f
@@ -53,14 +77,19 @@ object Voice {
         tts?.speak(t, TextToSpeech.QUEUE_FLUSH, null, "n" + System.nanoTime())
     }
 
-    fun stop() { tts?.stop(); speaking.value = false }
+    fun stop() {
+        tts?.stop()
+        speaking.value = false
+        mouthOpen.floatValue = 0f
+    }
 }
 
 /** Speech-to-text wrapper. Must be created and used on the main thread. */
 class Listener(
     private val c: Context,
     private val onText: (String) -> Unit,
-    private val onState: (Boolean) -> Unit
+    private val onState: (Boolean) -> Unit,
+    private val onPartial: (String) -> Unit = {}
 ) {
     private val sr: SpeechRecognizer? =
         if (SpeechRecognizer.isRecognitionAvailable(c)) SpeechRecognizer.createSpeechRecognizer(c) else null
@@ -78,7 +107,11 @@ class Listener(
                 val t = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()
                 if (!t.isNullOrBlank()) onText(t)
             }
-            override fun onPartialResults(partialResults: Bundle?) {}
+            override fun onPartialResults(partialResults: Bundle?) {
+                partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    ?.firstOrNull()
+                    ?.let(onPartial)
+            }
             override fun onEvent(eventType: Int, params: Bundle?) {}
         })
     }
@@ -87,6 +120,7 @@ class Listener(
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US")
+            .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
         sr?.startListening(i)
     }
 
