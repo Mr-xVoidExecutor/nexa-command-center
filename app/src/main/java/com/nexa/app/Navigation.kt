@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Public
+import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.RocketLaunch
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
@@ -82,6 +83,7 @@ private val moduleDestinations = listOf(
     ModuleDestination("deploy", "Deploy", "Dev & Cloud", Icons.Filled.RocketLaunch),
     ModuleDestination("db", "Database", "Dev & Cloud", Icons.Filled.Storage),
     ModuleDestination("accounts", "Accounts", "Dev & Cloud", Icons.Filled.AccountCircle),
+    ModuleDestination("permission_registry", "Permission Registry", "Security", Icons.Filled.AdminPanelSettings),
     ModuleDestination("console", "Console", "Dev & Cloud", Icons.Filled.Code),
     ModuleDestination("ads", "Meta Ads", "Marketing", Icons.Filled.Campaign),
     ModuleDestination("tasks", "Tasks", "Productivity", Icons.Filled.Checklist),

@@ -1,0 +1,4 @@
+project_id = "nexa-command-center"
+
+[functions.permission-registry]
+verify_jwt = false

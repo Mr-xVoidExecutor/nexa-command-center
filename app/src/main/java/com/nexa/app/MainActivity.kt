@@ -133,6 +133,7 @@ fun Root(act: MainActivity) {
                     "deploy" -> DeployScreen(back)
                     "db" -> DbScreen(back)
                     "accounts" -> AccountsScreen(back)
+                    "permission_registry" -> PermissionRegistryScreen(back)
                     "ads" -> AdsScreen(back)
                     "tasks" -> TasksScreen(back)
                     "notes" -> NotesScreen(back)
