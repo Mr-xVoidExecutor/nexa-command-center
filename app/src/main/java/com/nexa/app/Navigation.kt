@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.Checklist
@@ -80,6 +81,7 @@ private val moduleDestinations = listOf(
     ModuleDestination("github", "GitHub", "Dev & Cloud", Icons.Filled.Code),
     ModuleDestination("deploy", "Deploy", "Dev & Cloud", Icons.Filled.RocketLaunch),
     ModuleDestination("db", "Database", "Dev & Cloud", Icons.Filled.Storage),
+    ModuleDestination("accounts", "Accounts", "Dev & Cloud", Icons.Filled.AccountCircle),
     ModuleDestination("console", "Console", "Dev & Cloud", Icons.Filled.Code),
     ModuleDestination("ads", "Meta Ads", "Marketing", Icons.Filled.Campaign),
     ModuleDestination("tasks", "Tasks", "Productivity", Icons.Filled.Checklist),

@@ -132,6 +132,7 @@ fun Root(act: MainActivity) {
                     "github" -> GithubScreen(back)
                     "deploy" -> DeployScreen(back)
                     "db" -> DbScreen(back)
+                    "accounts" -> AccountsScreen(back)
                     "ads" -> AdsScreen(back)
                     "tasks" -> TasksScreen(back)
                     "notes" -> NotesScreen(back)

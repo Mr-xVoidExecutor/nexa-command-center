@@ -3,6 +3,7 @@ package com.nexa.app
 import android.util.Base64
 import android.util.Log
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
@@ -10,6 +11,59 @@ import java.util.Date
 import java.util.Locale
 
 object Api {
+    suspend fun verifyAccount(provider: String, token: String): Pair<Boolean, String> {
+        if (token.isBlank()) return false to "Enter an access token first."
+        val (code, body) = when (provider) {
+            "github" -> Net.call(
+                "https://api.github.com/user",
+                headers = mapOf("Authorization" to "Bearer $token", "Accept" to "application/vnd.github+json")
+            )
+            "vercel" -> Net.call(
+                "https://api.vercel.com/v2/user",
+                headers = mapOf("Authorization" to "Bearer $token")
+            )
+            "netlify" -> Net.call(
+                "https://api.netlify.com/api/v1/user",
+                headers = mapOf("Authorization" to "Bearer $token")
+            )
+            "supabase" -> Net.call(
+                "https://api.supabase.com/v1/projects",
+                headers = mapOf("Authorization" to "Bearer $token")
+            )
+            else -> return false to "Unsupported account provider."
+        }
+        if (code !in 200..299) {
+            val reason = when {
+                code == -1 -> "Could not reach $provider. Check your internet connection."
+                code == 401 || code == 403 -> "Token rejected by $provider ($code). Check its permissions and try again."
+                else -> "$provider returned HTTP $code. Check the token and try again."
+            }
+            return false to reason
+        }
+        return try {
+            when (provider) {
+                "github" -> true to "Connected to GitHub as ${JSONObject(body).optString("login", "user")}."
+                "vercel" -> {
+                    val user = JSONObject(body).optJSONObject("user")
+                    true to "Connected to Vercel as ${user?.optString("username")?.ifBlank { null } ?: "user"}."
+                }
+                "netlify" -> {
+                    val user = JSONObject(body)
+                    val name = user.optString("full_name").ifBlank { user.optString("email", "user") }
+                    true to "Connected to Netlify as $name."
+                }
+                "supabase" -> {
+                    val projects = JSONArray(body).length()
+                    true to "Connected to Supabase. $projects project(s) available."
+                }
+                else -> false to "Unsupported account provider."
+            }
+        } catch (e: JSONException) {
+            Log.e("NEXA", "Unexpected account verification response from $provider", e)
+            false to "$provider returned an unexpected response. The token was not saved."
+        }
+    }
+
     // ---------- AI (voice brain) ----------
     private val hist by lazy {
         Store.list("aiChatHistory").mapNotNull { encoded ->

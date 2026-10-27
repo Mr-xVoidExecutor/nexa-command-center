@@ -77,7 +77,7 @@ fun GithubScreen(back: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var info by remember { mutableStateOf("") }
     Screen("GitHub", back) {
-        if (Store.get("ghToken").isEmpty()) Mono("Add your GitHub token in Settings first.", Pink)
+        if (Store.get("ghToken").isEmpty()) Mono("Connect GitHub in Accounts first.", Pink)
         NeonButton("REFRESH REPOS", Modifier.fillMaxWidth()) { scope.launch { repos = Api.repos() } }
         Field(name, { name = it }, "New repo name")
         NeonButton("CREATE PRIVATE REPO", Modifier.fillMaxWidth()) {
@@ -96,7 +96,7 @@ fun GithubScreen(back: () -> Unit) {
 @Composable
 fun DeployScreen(back: () -> Unit) {
     Screen("Deploy / Go Live", back) {
-        Mono("Add a deploy hook URL from Vercel, Netlify, Render or Cloudflare Pages, then fire it to push your site live.", Dim, 12)
+        Mono("Connect Vercel or Netlify in Accounts. You can also add a deploy hook URL and fire it to push your site live.", Dim, 12)
         Spacer(Modifier.height(6.dp))
         Entries("hooks", "Site name", "Deploy hook URL") { n, _ ->
             val sc = rememberCoroutineScope()
@@ -115,6 +115,9 @@ fun DbScreen(back: () -> Unit) {
     var table by remember { mutableStateOf("") }
     var out by remember { mutableStateOf("") }
     Screen("Database (Supabase)", back) {
+        if (Store.get("supaUrl").isBlank() || Store.get("supaKey").isBlank()) {
+            Mono("Connect Supabase and save the project URL/key in Accounts first.", Pink, 11)
+        }
         Field(url, { url = it }, "Project URL (https://xxxx.supabase.co)")
         Field(key, { key = it }, "API key", secret = true)
         NeonButton("SAVE CONNECTION", Modifier.fillMaxWidth()) {
@@ -348,7 +351,6 @@ fun SettingsScreen(back: () -> Unit, lock: () -> Unit) {
         mutableStateOf(Store.get("aiModel").ifBlank { Store.get("claudeModel").ifBlank { Ai.preset(sel).model } })
     }
     var aiKey by remember { mutableStateOf(Ai.key()) }
-    var gh by remember { mutableStateOf(Store.get("ghToken")) }
     var fb by remember { mutableStateOf(Store.get("fbToken")) }
     var newPin by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf("") }
@@ -366,15 +368,14 @@ fun SettingsScreen(back: () -> Unit, lock: () -> Unit) {
         Field(url, { url = it }, "API URL")
         Spacer(Modifier.height(6.dp))
         Mono("OTHER KEYS", Cyan, 13, true)
-        Field(gh, { gh = it }, "GitHub token (PAT)", secret = true)
         Field(fb, { fb = it }, "Meta access token", secret = true)
+        Mono("Connect GitHub, Vercel, Netlify and Supabase in Accounts.", Dim, 11)
         NeonButton("SAVE", Modifier.fillMaxWidth()) {
             Store.put("aiPreset", sel)
             Store.put("aiType", Ai.preset(sel).type)
             Store.put("aiUrl", url.trim())
             Store.put("aiModel", model.trim())
             Store.put("aiKey", aiKey.trim())
-            Store.put("ghToken", gh.trim())
             Store.put("fbToken", fb.trim())
             msg = "Saved securely."
         }
